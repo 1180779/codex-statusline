@@ -217,6 +217,24 @@ class RenderTests(unittest.TestCase):
         self.assertNotIn("CTX", result)
         self.assertIn("colour196", render(self.state, 240, segments=["5h"], crit_at=80))
 
+    def test_model_segment_is_optional_safe_and_width_bounded(self):
+        segments = ["model", "ctx", "tokens"]
+        plain = render(self.state, 240, tmux=False, segments=segments)
+        self.assertTrue(plain.startswith("Claude Sonnet 4.5 | CTX USED"), plain)
+        self.assertNotIn("Claude", render(self.state, 240, tmux=False))
+        hostile = dict(self.state, model="Opus#(touch NEVER)\x1b]0;title\x07\u202e長")
+        for width in range(1, 241):
+            for tmux, ansi in ((True, False), (False, True), (False, False)):
+                out = render(hostile, width, segments=segments, tmux=tmux, ansi=ansi)
+                self.assertLessEqual(visible_width(out), width)
+                self.assertNotIn("title", out)
+                self.assertNotIn("\u202e", out)
+                if tmux:
+                    self.assertIsNone(re.search(r"(?<!#)#\(", out), out)
+        for missing in (None, 123, "", "\x1b[31m\u202e"):
+            out = render({"model": missing}, 80, tmux=False, segments=["model"])
+            self.assertIn("CTX USED", out)  # no model metadata yet: retain a useful bar
+
 
 class ConfigTests(unittest.TestCase):
     def test_missing_file_defaults_and_invalid_keys_ignored(self):
@@ -227,6 +245,9 @@ class ConfigTests(unittest.TestCase):
         ):
             path = Path(tmp) / "config.toml"
             self.assertEqual(load_config(path)["segments"], ["ctx", "5h", "week", "tokens"])
+            self.assertEqual(
+                load_config(path, "claude")["segments"], ["model", "ctx", "5h", "week", "tokens"]
+            )
             path.write_text('segments = ["week", "ctx"]\ntheme = "neon"\nwarn_at = 30\n')
             cfg = load_config(path)
             self.assertEqual(

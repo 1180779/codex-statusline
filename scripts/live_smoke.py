@@ -23,7 +23,7 @@ import time
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-ENTRY = REPO / "run.py"
+ENTRY = REPO / "src" / "entry.py"
 parser = argparse.ArgumentParser()
 parser.add_argument("--output", default="/tmp/csl-live-evidence.json")
 parser.add_argument("--recording")

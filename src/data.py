@@ -233,14 +233,8 @@ class LogReader:
                     probe_stream.seek(self._offset - len(self._probe))
                     overwritten = probe_stream.read(len(self._probe)) != self._probe
             if identity != self._identity or stat.st_size < self._offset or overwritten:
+                self._reset(path)
                 self._identity = identity
-                self._offset = 0
-                self._partial = b""
-                self._discard_until_newline = False
-                self._probe = b""
-                self._quotas = _empty_quotas()
-                self._tokens = None
-                self._usage = None
                 if stat.st_size > _MAX_READ_BYTES:
                     # Start at a bounded tail boundary, discarding its possibly
                     # incomplete first line.  Current quota events remain
@@ -268,14 +262,7 @@ class LogReader:
         except FileNotFoundError:
             # A missing bound file has no metadata yet.  Retain the selected
             # path, but a later appearance will be picked up by identity reset.
-            self._identity = None
-            self._offset = 0
-            self._partial = b""
-            self._discard_until_newline = False
-            self._probe = b""
-            self._quotas = _empty_quotas()
-            self._tokens = None
-            self._usage = None
+            self._reset(path)
         except OSError:
             # Avoid exporting filesystem details or turning transient I/O into
             # fabricated quota data; previously observed metadata remains.

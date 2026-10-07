@@ -44,10 +44,10 @@ Missing tmux? `brew install tmux` or `sudo apt install tmux`.
 
 ## Claude Code
 
-The same bar works in [Claude Code](https://code.claude.com/docs/en/statusline): `cxbar install` sets it as Claude Code's `statusLine` when it finds `~/.claude`, so `claude` shows the same two lines, plus the session cost:
+The same bar works in [Claude Code](https://code.claude.com/docs/en/statusline): `cxbar install` sets it as Claude Code's `statusLine` when it finds `~/.claude`, so `claude` shows the current model and the same two lines, plus the session cost:
 
 ```text
-CTX USED ███░░░░░ 35% | 5h ██░░░░░░░░ 18% 3:46pm | week ██████░░░░ 62% Sat 1:46pm | tok 1.2M
+Opus 5.5 | CTX USED ███░░░░░ 35% | 5h ██░░░░░░░░ 18% 3:46pm | week ██████░░░░ 62% Sat 1:46pm | tok 1.2M
 in 1.2M · 94% cached · out 44.0k · ≈$1.84
 ```
 
@@ -113,6 +113,8 @@ The second line has four parts:
 
 Turn them all off to keep a single line.
 
+The first-line `model` segment shows the current model, including its version when available. It is on by default in Claude Code and off in Codex, whose own footer already shows the model. Toggle or reorder it in `cxbar config`, or set `segments` per tool below. Codex does not supply session cost, so enabling `cost` cannot produce a dollar amount there. The `git` segment appears only when the session's working directory is inside a Git repository.
+
 It writes `~/.config/codex-statusline/config.toml`, which you can also edit by hand:
 
 ```toml
@@ -126,6 +128,7 @@ update_check = true  # show "↑ update available" in the bar when one is out
 line2 = ["usage", "cost", "git"]  # second line: any of "usage", "cost", "git", "pace"; [] for none
 
 [claude]
+segments = ["model", "ctx", "5h", "week", "tokens"]
 line2 = ["usage", "cost", "git", "pace"]  # e.g. pace only in Claude Code
 ```
 

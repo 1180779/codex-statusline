@@ -112,6 +112,8 @@ cxbar uninstall
 
 全部关掉，就只显示一行。
 
+第一行的 `model` 显示当前模型，有版本信息时也会显示版本。Claude Code 默认打开；Codex 自带的底栏已经显示模型，所以默认关闭。可以在 `cxbar config` 中开关、排序，或在下面按工具设置 `segments`。Codex 没有提供会话费用，打开 `cost` 也不会显示美元金额；`git` 只有在会话工作目录属于 Git 仓库时才显示。
+
 配置保存在 `~/.config/codex-statusline/config.toml`，也可以直接手动编辑：
 
 ```toml
@@ -125,6 +127,7 @@ update_check = true  # 有新版本时在底栏显示 "↑ update available"
 line2 = ["usage", "cost", "git"]  # 第二行："usage"、"cost"、"git"、"pace" 任选，[] 不显示
 
 [claude]
+segments = ["model", "ctx", "5h", "week", "tokens"]
 line2 = ["usage", "cost", "git", "pace"]  # 例如只在 Claude Code 里显示 pace
 ```
 

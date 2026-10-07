@@ -5,7 +5,6 @@ import json
 import os
 import shlex
 import shutil
-import subprocess
 import sys
 import time
 import tomllib
@@ -17,24 +16,6 @@ from .launcher import ENTRY
 BEGIN = "# >>> codex-statusline >>>"
 END = "# <<< codex-statusline <<<"
 STATUS_MESSAGE = "codex-statusline binding"
-
-
-def detected_shell():
-    # $SHELL can remain zsh even when Ghostty's configured command is fish.
-    try:
-        proc = subprocess.run(
-            ["ps", "-p", str(os.getppid()), "-o", "comm="],
-            capture_output=True,
-            text=True,
-            timeout=1,
-        )
-        name = Path(proc.stdout.strip()).name.lstrip("-")
-        if name in ("fish", "zsh", "bash"):
-            return name
-    except (OSError, subprocess.TimeoutExpired):
-        pass
-    name = Path(os.environ.get("SHELL", "/bin/zsh")).name
-    return name if name in ("fish", "zsh", "bash") else "zsh"
 
 
 def available_shells():

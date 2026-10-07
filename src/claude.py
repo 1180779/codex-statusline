@@ -22,11 +22,21 @@ def _num(value: Any) -> float | None:
 
 
 def state_from(data: dict, now: float) -> dict:
+    model = data.get("model") if isinstance(data.get("model"), dict) else {}
+    model_id = model.get("id")
+    name = model.get("display_name")
+    name = name.strip() if isinstance(name, str) else ""
+    if isinstance(model_id, str):
+        match = re.fullmatch(r"claude-([a-z]+)-(\d+)-(\d+)(?:-\d{8})?(\[1m\])?", model_id)
+        if match and (not name or name.casefold() == match[1]):
+            name = f"{match[1].capitalize()} {match[2]}.{match[3]}{match[4] or ''}"
+        name = name or model_id
     window = data.get("context_window") if isinstance(data.get("context_window"), dict) else {}
     limits = data.get("rate_limits") if isinstance(data.get("rate_limits"), dict) else {}
     cost = data.get("cost") if isinstance(data.get("cost"), dict) else {}
     state: dict[str, Any] = {
         "now": now,
+        "model": name,
         "context_used": _num(window.get("used_percentage")),
         "quota_optional": True,  # only subscriptions report rate limits
     }

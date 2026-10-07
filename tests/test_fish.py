@@ -72,13 +72,3 @@ class FishTests(unittest.TestCase):
                 manage.installation(args, True)
                 self.assertEqual(fish.read_text(), "# later user setting\n")
                 self.assertNotIn(manage.BEGIN, (root / ".zshrc").read_text())
-
-    def test_shell_detection_prefers_parent_to_login_shell(self):
-        with (
-            patch.dict(os.environ, {"SHELL": "/bin/zsh"}),
-            patch(
-                "subprocess.run",
-                return_value=subprocess.CompletedProcess([], 0, "/opt/homebrew/bin/fish\n", ""),
-            ),
-        ):
-            self.assertEqual(manage.detected_shell(), "fish")

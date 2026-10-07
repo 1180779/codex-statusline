@@ -15,6 +15,7 @@ from src.claude import state_from, statusline
 
 NOW = time.time()
 SUBSCRIBER = {
+    "model": {"id": "claude-opus-5-5", "display_name": "Opus"},
     "context_window": {
         "used_percentage": 35,
         "total_input_tokens": 1_190_000,
@@ -54,6 +55,7 @@ class ClaudeStatuslineTests(unittest.TestCase):
         self.assertIn("\x1b[38;5;", out)  # ANSI colors for Claude Code
         plain = ANSI.sub("", out).splitlines()
         self.assertEqual(len(plain), 2)
+        self.assertTrue(plain[0].startswith("Opus 5.5 | CTX USED"), plain[0])
         self.assertIn("CTX USED", plain[0])
         self.assertIn("5h ██░░░░░░░░ 18%", plain[0])
         self.assertIn("in 1.2M · 94% cached · out 44.0k · ≈$1.84", plain[1])
@@ -82,6 +84,23 @@ class ClaudeStatuslineTests(unittest.TestCase):
         self.assertEqual(state["quotas"]["5h"]["remaining"], 18.0)
         self.assertEqual(state["quotas"]["weekly"]["reset_at"], NOW + 200_000)
         self.assertEqual(state["tokens"], 1_234_000)
+
+    def test_model_name_fallback_and_configurable_segment(self):
+        for model, expected in (
+            ({"id": "claude-opus-5-5", "display_name": "Opus"}, "Opus 5.5"),
+            ({"id": "claude-sonnet-4-5-20250929"}, "Sonnet 4.5"),
+            ({"id": "claude-opus-5-5[1m]", "display_name": "Opus"}, "Opus 5.5[1m]"),
+            ({"id": "custom-model", "display_name": "My Model"}, "My Model"),
+            ({"id": "custom-model"}, "custom-model"),
+            (None, ""),
+        ):
+            with self.subTest(model=model):
+                self.assertEqual(state_from({"model": model}, NOW)["model"], expected)
+        config = self.home / "cfg/codex-statusline/config.toml"
+        config.parent.mkdir(parents=True)
+        config.write_text('[claude]\nsegments = ["ctx", "tokens"]\n')
+        plain = ANSI.sub("", run_statusline(SUBSCRIBER, self.home))
+        self.assertNotIn("Opus", plain)
 
 
 class ClaudeInstallTests(unittest.TestCase):

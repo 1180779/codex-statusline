@@ -1,7 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.7.1
 
+- Show the current model and version in Claude Code by default. Toggle or reorder the `model` segment per tool in `cxbar config`; it remains off by default in Codex.
+- Document why Codex has no session cost and why the Git segment is hidden outside a repository.
+- Remove the redundant `run.py` entry, unused shell detection and renderer arguments, and duplicate log-reader resets. Development commands and the live smoke test use the existing entry points.
 - `cxbar update` prints the command it runs before that command's own output.
 
 ## 0.7.0

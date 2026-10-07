@@ -53,6 +53,8 @@ def load_config(path: str | os.PathLike | None = None, target: str = "codex") ->
     if path is None:
         path = config_path()
     config = dict(_CONFIG_DEFAULTS)
+    if target == "claude":
+        config["segments"] = ["model", *DEFAULT_SEGMENTS]
     try:
         raw = tomllib.loads(Path(path).read_text())
     except FileNotFoundError:
@@ -62,7 +64,9 @@ def load_config(path: str | os.PathLike | None = None, target: str = "codex") ->
         raw = {}
     checks = {
         "segments": lambda v: (
-            isinstance(v, list) and v and all(x in ("ctx", "5h", "week", "tokens") for x in v)
+            isinstance(v, list)
+            and v
+            and all(x in ("model", "ctx", "5h", "week", "tokens") for x in v)
         ),
         "theme": lambda v: v in THEMES,
         "ascii": lambda v: isinstance(v, bool),
@@ -160,13 +164,12 @@ def _pct(value: Any) -> str:
     return "--" if number is None else f"{number}%"
 
 
-def _bar(value: Any, slots: int, ascii_only: bool, *, left: bool = False) -> str:
+def _bar(value: Any, slots: int, ascii_only: bool) -> str:
     number = _percent(value)
     if number is None:
         symbol = "-" if ascii_only else "·"
         return symbol * slots
-    ratio = number
-    filled = round(ratio * slots / 100)
+    filled = round(number * slots / 100)
     if ascii_only:
         return "=" * filled + "-" * (slots - filled)
     return "█" * filled + "░" * (slots - filled)
@@ -199,7 +202,7 @@ def _quota_values(
     left = "--" if remaining is None else f"{remaining}%"
     reset = _reset(data.get("reset_at"), now, weekly)
     compact = f"{label} {left}"
-    bar = _bar(remaining, 10, ascii_only, left=True)
+    bar = _bar(remaining, 10, ascii_only)
     detail = f"{label} {bar} {left} {reset}".rstrip()
     return detail, compact, remaining
 
@@ -369,6 +372,11 @@ def render(
         "week": (qwdetail, qwcompact, _quota_role(qwvalue, warn_at, crit_at)),
         "tokens": (tok, tok, "accent"),
     }
+    model = state.get("model")
+    if isinstance(model, str) and model.strip():
+        text = _safe(model, ascii_only, tmux and not ansi).strip()
+        if text:
+            known["model"] = (text, text, "accent")
     # Plans without a 5h (or weekly) limit report only the other window: hide the missing one.
     if (q5value is None) != (qwvalue is None):
         del known["5h" if q5value is None else "week"]
@@ -377,6 +385,10 @@ def render(
         del known["5h"], known["week"]
     parts = [known[name] for name in (segments or DEFAULT_SEGMENTS) if name in known] or [
         known["ctx"]
+    ]
+    parts = [
+        (detail if i == 0 else detail.lstrip(), compact if i == 0 else compact.lstrip(), role)
+        for i, (detail, compact, role) in enumerate(parts)
     ]
     update = state.get("update")
     hint = None

@@ -6,7 +6,6 @@ import re
 import time
 
 from .render import (
-    DEFAULT_SEGMENTS,
     LINE2_SEGMENTS,
     TARGETS,
     THEMES,
@@ -22,6 +21,7 @@ SEGMENT_NAMES = {
     "5h": "5-hour quota",
     "week": "weekly quota",
     "tokens": "session tokens",
+    "model": "current model",
 }
 LINE2_NAMES = {
     "usage": "tokens in / cached / out",
@@ -44,7 +44,7 @@ HELP = "↑↓ move  space toggle  ←→ change  J/K reorder  Tab switch tool  
 
 def model_from(cfg: dict, target: str = "claude") -> dict:
     enabled = [name for name in cfg["segments"] if name in SEGMENT_NAMES]
-    order = enabled + [name for name in DEFAULT_SEGMENTS if name not in enabled]
+    order = enabled + [name for name in SEGMENT_NAMES if name not in enabled]
     line2_order = LINE2_FOR[target]
     return {
         **{key: cfg[key] for key in SETTINGS},
@@ -150,6 +150,7 @@ def rows_text(model: dict) -> list[str]:
 def sample_state(target: str = "codex") -> dict:
     now = time.time()
     state = {
+        "model": "gpt-model" if target == "codex" else "Opus 5.5",
         "context_used": 35,
         "tokens": 1_234_567,
         "usage": {

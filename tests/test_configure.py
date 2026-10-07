@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from src.configure import apply, dump_toml, model_from, rows_text, to_config
+from src.configure import SETTINGS, apply, dump_toml, model_from, rows_text, to_config
 from src.render import load_config
 
 
@@ -17,15 +17,17 @@ class ConfigureTests(unittest.TestCase):
         row = apply(m, 3, "space")  # turn tokens off
         row = apply(m, 1, "J")  # move 5h below week
         self.assertEqual(row, 2)
-        apply(m, 8, "right")  # theme auto -> dark
-        apply(m, 10, "left")  # warn_at 40 -> 35
-        apply(m, 11, "left")  # crit_at 20 -> 15
-        apply(m, 11, "left")  # 15 -> 10
-        apply(m, 12, "space")  # update notice off
-        apply(m, 4, "space")  # line 2: usage (on by default) -> off
-        apply(m, 5, "space")  # line 2: cost (on by default) -> off
-        apply(m, 6, "space")  # line 2: git (on by default) -> off
-        apply(m, 7, "space")  # line 2: pace on
+        line2 = len(m["order"])
+        settings = line2 + len(m["line2_order"])
+        apply(m, settings, "right")  # theme auto -> dark
+        apply(m, settings + 2, "left")  # warn_at 40 -> 35
+        apply(m, settings + 3, "left")  # crit_at 20 -> 15
+        apply(m, settings + 3, "left")  # 15 -> 10
+        apply(m, settings + 4, "space")  # update notice off
+        apply(m, line2, "space")  # usage off
+        apply(m, line2 + 1, "space")  # cost off
+        apply(m, line2 + 2, "space")  # git off
+        apply(m, line2 + 3, "space")  # pace on
         cfg = to_config(m)
         self.assertEqual(cfg["line2"], ["pace"])
         self.assertEqual(cfg["segments"], ["ctx", "week", "5h"])
@@ -48,6 +50,23 @@ class ConfigureTests(unittest.TestCase):
 
 
 class TwoToolTests(unittest.TestCase):
+    def test_model_toggle_reorder_and_roundtrip(self):
+        from src.configure import dump_sections
+
+        with patch.dict("os.environ", {}, clear=True):
+            model = model_from(load_config("/nonexistent.toml", "claude"), "claude")
+            self.assertIn("model", model["enabled"])
+            row = apply(model, model["order"].index("model"), "J")
+            self.assertEqual(row, 1)
+            apply(model, row, "space")
+            text = dump_sections({"claude": to_config(model)})
+            with tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp) / "config.toml"
+                path.write_text(text)
+                saved = load_config(path, "claude")
+                self.assertNotIn("model", saved["segments"])
+                self.assertEqual(saved, to_config(model))
+
     def test_each_tool_saves_and_loads_its_own_section(self):
         from src.configure import dump_sections
 
@@ -94,8 +113,9 @@ class TwoToolTests(unittest.TestCase):
 
         with patch.dict("os.environ", {}, clear=True):
             model = model_from(load_config("/nonexistent.toml", "codex"), "codex")
+            row = len(model["order"]) + len(model["line2_order"]) + SETTINGS.index("crit_at")
             for _ in range(30):
-                apply(model, 10, "left")  # crit_at all the way down
+                apply(model, row, "left")  # crit_at all the way down
             self.assertEqual(model["crit_at"], 0)
             text = dump_sections({"codex": to_config(model)})
         self.assertEqual(text, "[codex]\ncrit_at = 0\n")
