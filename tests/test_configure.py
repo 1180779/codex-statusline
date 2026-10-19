@@ -48,6 +48,19 @@ class ConfigureTests(unittest.TestCase):
             with patch.dict("os.environ", {}, clear=True):
                 self.assertEqual(load_config(path), to_config(self.model))
 
+    def test_relative_time_toggle_is_saved(self):
+        from src.configure import dump_sections
+
+        with patch.dict("os.environ", {}, clear=True):
+            model = model_from(load_config("/nonexistent/config.toml", "codex"), "codex")
+        row = len(model["order"]) + len(model["line2_order"])
+        row += SETTINGS.index("relative_time")
+        apply(model, row, "space")
+        self.assertFalse(model["relative_time"])
+        self.assertIn("Relative time    [ ]", rows_text(model))
+        text = dump_sections({"codex": to_config(model)})
+        self.assertEqual(text, "[codex]\nrelative_time = false\n")
+
 
 class TwoToolTests(unittest.TestCase):
     def test_model_toggle_reorder_and_roundtrip(self):

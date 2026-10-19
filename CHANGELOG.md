@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Quota segments now show the time left until a window resets (`1h 20m`, `2d 4h`) instead of the clock time of the reset.
+- `relative_time = false` (or **Relative time** off in `cxbar config`) restores the reset clock; it defaults to `true`.
 
 ## 0.7.1
 

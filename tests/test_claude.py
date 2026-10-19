@@ -58,7 +58,16 @@ class ClaudeStatuslineTests(unittest.TestCase):
         self.assertTrue(plain[0].startswith("Opus 5.5 | CTX USED"), plain[0])
         self.assertIn("CTX USED", plain[0])
         self.assertIn("5h ██░░░░░░░░ 18%", plain[0])
+        self.assertRegex(plain[0], r"5h .* \d+h \d+m")
         self.assertIn("in 1.2M · 94% cached · out 44.0k · ≈$1.84", plain[1])
+
+    def test_relative_time_can_be_disabled(self):
+        config = self.home / "cfg/codex-statusline/config.toml"
+        config.parent.mkdir(parents=True)
+        config.write_text("[claude]\nrelative_time = false\n")
+        plain = ANSI.sub("", run_statusline(SUBSCRIBER, self.home))
+        self.assertRegex(plain, r"\d{1,2}:\d{2}[ap]m")
+        self.assertNotRegex(plain, r"5h .* \d+h \d+m")
 
     def test_api_key_user_has_no_quota_segments_or_guessed_cache(self):
         data = {

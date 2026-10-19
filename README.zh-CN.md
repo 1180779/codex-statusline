@@ -101,6 +101,7 @@ cxbar uninstall
   Quota yellow at  < 40% >
   Quota red at     < 20% >
   Update notice    [x]
+  Relative time    [x]
 ```
 
 第二行有四项：
@@ -114,6 +115,8 @@ cxbar uninstall
 
 第一行的 `model` 显示当前模型，有版本信息时也会显示版本。Claude Code 默认打开；Codex 自带的底栏已经显示模型，所以默认关闭。可以在 `cxbar config` 中开关、排序，或在下面按工具设置 `segments`。Codex 没有提供会话费用，打开 `cost` 也不会显示美元金额；`git` 只有在会话工作目录属于 Git 仓库时才显示。
 
+额度段默认显示距离重置还有多久。把 `relative_time` 设为 `false`，或在 `cxbar config` 里关闭 **Relative time**，即可改回显示重置的时刻。
+
 配置保存在 `~/.config/codex-statusline/config.toml`，也可以直接手动编辑：
 
 ```toml
@@ -124,6 +127,7 @@ ascii = false      # 终端不支持方块字符时设为 true
 warn_at = 40       # 额度剩余低于该百分比变黄
 crit_at = 20       # 额度剩余低于该百分比变红
 update_check = true  # 有新版本时在底栏显示 "↑ update available"
+relative_time = true  # 显示距重置剩余时间；false 则显示重置时刻
 line2 = ["usage", "cost", "git"]  # 第二行："usage"、"cost"、"git"、"pace" 任选，[] 不显示
 
 [claude]

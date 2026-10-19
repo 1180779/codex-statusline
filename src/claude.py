@@ -107,6 +107,7 @@ def statusline(stream=None) -> int:
             segments=cfg["segments"],
             warn_at=cfg["warn_at"],
             crit_at=cfg["crit_at"],
+            relative_time=cfg["relative_time"],
             **style,
         ),
         render_line2(state, width, cfg["line2"], **style),

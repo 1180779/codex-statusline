@@ -102,6 +102,7 @@ Run `cxbar config` to set everything up in an interactive screen with a live, co
   Quota yellow at  < 40% >
   Quota red at     < 20% >
   Update notice    [x]
+  Relative time    [x]
 ```
 
 The second line has four parts:
@@ -115,6 +116,8 @@ Turn them all off to keep a single line.
 
 The first-line `model` segment shows the current model, including its version when available. It is on by default in Claude Code and off in Codex, whose own footer already shows the model. Toggle or reorder it in `cxbar config`, or set `segments` per tool below. Codex does not supply session cost, so enabling `cost` cannot produce a dollar amount there. The `git` segment appears only when the session's working directory is inside a Git repository.
 
+By default quota segments show the time left until reset. Set `relative_time = false`, or turn off **Relative time** in `cxbar config`, to show the clock time of the reset instead.
+
 It writes `~/.config/codex-statusline/config.toml`, which you can also edit by hand:
 
 ```toml
@@ -125,6 +128,7 @@ ascii = false      # true for terminals without block glyphs
 warn_at = 40       # quota remaining % that turns yellow
 crit_at = 20       # quota remaining % that turns red
 update_check = true  # show "↑ update available" in the bar when one is out
+relative_time = true  # show time left until reset; false shows the reset clock
 line2 = ["usage", "cost", "git"]  # second line: any of "usage", "cost", "git", "pace"; [] for none
 
 [claude]

@@ -27,6 +27,7 @@ _PALETTES = {  # mid-tone colors for auto stay readable on white and black backg
 }
 _CONFIG_DEFAULTS = {
     "update_check": True,
+    "relative_time": True,
     "segments": DEFAULT_SEGMENTS,
     "theme": "auto",
     "ascii": False,
@@ -71,6 +72,7 @@ def load_config(path: str | os.PathLike | None = None, target: str = "codex") ->
         "theme": lambda v: v in THEMES,
         "ascii": lambda v: isinstance(v, bool),
         "update_check": lambda v: isinstance(v, bool),
+        "relative_time": lambda v: isinstance(v, bool),
         "warn_at": lambda v: isinstance(v, int) and not isinstance(v, bool) and 0 <= v <= 100,
         "crit_at": lambda v: isinstance(v, int) and not isinstance(v, bool) and 0 <= v <= 100,
         "line2": lambda v: isinstance(v, list) and all(x in LINE2_SEGMENTS for x in v),
@@ -206,13 +208,18 @@ def _time_left(reset_at: Any, now: float) -> str:
     return f"{minutes}m"
 
 
-def _reset(reset_at: Any, now: float, weekly: bool = False) -> str:
-    """Backward-compatible name for the reset countdown; *weekly* is ignored."""
-    return _time_left(reset_at, now)
+def _reset(reset_at: Any, now: float, weekly: bool = False, relative: bool = True) -> str:
+    """Format a reset as time left (default) or as the clock time of the reset."""
+    stamp = _number(reset_at)
+    if stamp is None:
+        return "--"
+    if stamp <= now:
+        return ""  # window already reset; next reset is unknown until Codex reports again
+    return _time_left(stamp, now) if relative else _clock(stamp, weekly)
 
 
 def _quota_values(
-    data: Any, now: float, weekly: bool, ascii_only: bool
+    data: Any, now: float, weekly: bool, ascii_only: bool, relative: bool = True
 ) -> tuple[str, str, int | None]:
     label = "week" if weekly else "5h"
     if not isinstance(data, dict):
@@ -220,7 +227,7 @@ def _quota_values(
     # Past its reset time the window has rolled over: nothing seen since means full quota.
     remaining = 100 if _is_stale(data, now) else _percent(data.get("remaining"))
     left = "--" if remaining is None else f"{remaining}%"
-    reset = _reset(data.get("reset_at"), now)
+    reset = _reset(data.get("reset_at"), now, weekly, relative)
     compact = f"{label} {left}"
     bar = _bar(remaining, 10, ascii_only)
     detail = f"{label} {bar} {left} {reset}".rstrip()
@@ -363,6 +370,7 @@ def render(
     segments: list[str] | None = None,
     warn_at: int = 40,
     crit_at: int = 20,
+    relative_time: bool = True,
     ansi: bool = False,
 ) -> str:
     """Render an untrusted status snapshot to one line no wider than *width*."""
@@ -380,8 +388,12 @@ def render(
     context_compact = f"  CTX USED {_pct(context)}"
 
     quotas = state.get("quotas") if isinstance(state.get("quotas"), dict) else {}
-    q5detail, q5compact, q5value = _quota_values(quotas.get("5h"), now, False, ascii_only)
-    qwdetail, qwcompact, qwvalue = _quota_values(quotas.get("weekly"), now, True, ascii_only)
+    q5detail, q5compact, q5value = _quota_values(
+        quotas.get("5h"), now, False, ascii_only, relative_time
+    )
+    qwdetail, qwcompact, qwvalue = _quota_values(
+        quotas.get("weekly"), now, True, ascii_only, relative_time
+    )
     tok = _tokens(state.get("tokens"))
     sep = " | "
     # Quotas are remaining percentages; expired windows read as full (see _quota_values).

@@ -156,7 +156,12 @@ def placeholder(width=80):
     # Quota is account-wide, so even the very first frame can show it.
     state = {"quotas": newest_quotas(sessions_dir(), {})}
     return render(
-        state, width, theme=cfg["theme"], ascii_only=cfg["ascii"], segments=cfg["segments"]
+        state,
+        width,
+        theme=cfg["theme"],
+        ascii_only=cfg["ascii"],
+        segments=cfg["segments"],
+        relative_time=cfg["relative_time"],
     )
 
 
@@ -305,6 +310,7 @@ def launch(args):
                     segments=cfg["segments"],
                     warn_at=cfg["warn_at"],
                     crit_at=cfg["crit_at"],
+                    relative_time=cfg["relative_time"],
                 )
                 if line != last_line:
                     call("set-option", "-t", "codex", "status-left", line)

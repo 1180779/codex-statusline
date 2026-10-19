@@ -64,6 +64,16 @@ class RenderTests(unittest.TestCase):
         self.assertIn("2d 4h", line)
         self.assertNotRegex(line, r"\d{1,2}:\d{2}[ap]m")
 
+    def test_relative_time_can_be_disabled(self):
+        from src.render import _clock
+
+        relative = render(self.state, 240, tmux=False)
+        absolute = render(self.state, 240, tmux=False, relative_time=False)
+        self.assertIn("1h 0m", relative)
+        self.assertIn(_clock(self.state["quotas"]["5h"]["reset_at"]), absolute)
+        self.assertIn(_clock(self.state["quotas"]["weekly"]["reset_at"], weekly=True), absolute)
+        self.assertNotIn("1h 0m", absolute)
+
     def test_unknown_values(self):
         result = render(
             {"model": "M", "context_used": None, "cwd": "/x", "quotas": {}},
@@ -272,6 +282,16 @@ class ConfigTests(unittest.TestCase):
             )
             path.write_text("not = [toml")
             self.assertEqual(load_config(path)["theme"], "auto")
+
+    def test_relative_time_defaults_on_and_accepts_false(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {}, clear=True):
+            path = Path(tmp) / "config.toml"
+            self.assertTrue(load_config(path)["relative_time"])
+            path.write_text("relative_time = false\n")
+            self.assertFalse(load_config(path)["relative_time"])
+            path.write_text('relative_time = "off"\n')
+            with patch("sys.stderr"):
+                self.assertTrue(load_config(path)["relative_time"])
 
 
 class CountdownTests(unittest.TestCase):

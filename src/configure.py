@@ -31,13 +31,14 @@ LINE2_NAMES = {
 }
 # Codex reports no cost, so its screen does not offer it.
 LINE2_FOR = {"codex": ["usage", "git", "pace"], "claude": LINE2_SEGMENTS}
-SETTINGS = ["theme", "ascii", "warn_at", "crit_at", "update_check"]
+SETTINGS = ["theme", "ascii", "warn_at", "crit_at", "update_check", "relative_time"]
 LABELS = {
     "theme": "Theme",
     "ascii": "ASCII only",
     "warn_at": "Quota yellow at",
     "crit_at": "Quota red at",
     "update_check": "Update notice",
+    "relative_time": "Relative time",
 }
 HELP = "↑↓ move  space toggle  ←→ change  J/K reorder  Tab switch tool  s save  q quit"
 
@@ -180,6 +181,7 @@ def preview_lines(model: dict, target: str, width: int, ascii_only: bool) -> lis
         segments=cfg["segments"],
         warn_at=cfg["warn_at"],
         crit_at=cfg["crit_at"],
+        relative_time=cfg["relative_time"],
         **style,
     )
     second = render_line2(state, width, cfg["line2"], **style)
