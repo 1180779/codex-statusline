@@ -151,6 +151,7 @@ def sample_state(target: str = "codex") -> dict:
     now = time.time()
     state = {
         "model": "gpt-model" if target == "codex" else "Opus 5.5",
+        "now": now,
         "context_used": 35,
         "tokens": 1_234_567,
         "usage": {
@@ -159,8 +160,8 @@ def sample_state(target: str = "codex") -> dict:
             "output_tokens": 44_000,
         },
         "quotas": {
-            "5h": {"remaining": 18, "reset_at": now + 7200, "observed_at": now},
-            "weekly": {"remaining": 62, "reset_at": now + 172800, "observed_at": now},
+            "5h": {"remaining": 18, "reset_at": now + 2 * 3600 + 15 * 60, "observed_at": now},
+            "weekly": {"remaining": 62, "reset_at": now + 2 * 86400 + 4 * 3600, "observed_at": now},
         },
     }
     state["git"] = {"branch": "main", "added": 42, "removed": 10}

@@ -1,7 +1,7 @@
 [project]
 name = "codex-statusline"
 version = "0.7.1"
-description = "Status bar for OpenAI Codex CLI and Claude Code: context usage, 5h and weekly quota with reset times, tokens, and cost at a glance. Local-only."
+description = "Status bar for OpenAI Codex CLI and Claude Code: context usage, 5h and weekly quota with time until reset, tokens, and cost at a glance. Local-only."
 requires-python = ">=3.11"
 license = "MIT"
 readme = "README.md"

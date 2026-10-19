@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Quota segments now show the time left until a window resets (`1h 20m`, `2d 4h`) instead of the clock time of the reset.
+
 ## 0.7.1
 
 - Show the current model and version in Claude Code by default. Toggle or reorder the `model` segment per tool in `cxbar config`; it remains off by default in Codex.

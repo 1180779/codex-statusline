@@ -8,7 +8,7 @@
 
 English | [简体中文](README.zh-CN.md)
 
-A status bar for [OpenAI Codex CLI](https://github.com/openai/codex) and [Claude Code](https://code.claude.com). It shows context used, 5-hour and weekly quota left with reset times, and session tokens. You keep running `codex` and `claude` exactly as before.
+A status bar for [OpenAI Codex CLI](https://github.com/openai/codex) and [Claude Code](https://code.claude.com). It shows context used, 5-hour and weekly quota left with the time until each window resets, and session tokens. You keep running `codex` and `claude` exactly as before.
 
 ![codex-statusline demo](docs/demo.gif)
 
@@ -47,13 +47,13 @@ Missing tmux? `brew install tmux` or `sudo apt install tmux`.
 The same bar works in [Claude Code](https://code.claude.com/docs/en/statusline): `cxbar install` sets it as Claude Code's `statusLine` when it finds `~/.claude`, so `claude` shows the current model and the same two lines, plus the session cost:
 
 ```text
-Opus 5.5 | CTX USED ███░░░░░ 35% | 5h ██░░░░░░░░ 18% 3:46pm | week ██████░░░░ 62% Sat 1:46pm | tok 1.2M
+Opus 5.5 | CTX USED ███░░░░░ 35% | 5h ██░░░░░░░░ 18% 2h 15m | week ██████░░░░ 62% 2d 4h | tok 1.2M
 in 1.2M · 94% cached · out 44.0k · ≈$1.84
 ```
 
 - **Keeps what you have.** Already using another statusLine? Install leaves it alone; `cxbar install --claude` switches, and `cxbar uninstall` puts yours back.
 - **No tmux needed** on the Claude side: Claude Code passes the numbers to the bar directly.
-- **Every account.** Pro and Max see 5h and weekly quota with reset times; API-key users see context, tokens, and cost.
+- **Every account.** Pro and Max see 5h and weekly quota with the time left until each reset; API-key users see context, tokens, and cost.
 - **One config.** `cxbar config` changes the bar in both tools.
 
 ## Usage
@@ -84,7 +84,7 @@ Run `cxbar config` to set everything up in an interactive screen with a live, co
   [ Codex ]   Claude Code      Tab: switch
 
   Preview
-    CTX USED ███░░░░░ 35% | 5h ██░░░░░░░░ 18% 3:46pm | week ██████░░░░ 62% Sat 1:46pm | tok 1.2M
+    CTX USED ███░░░░░ 35% | 5h ██░░░░░░░░ 18% 2h 15m | week ██████░░░░ 62% 2d 4h | tok 1.2M
     in 1.2M · 94% cached · out 44.0k | ⎇ main +42 -10
 
   Line 1

@@ -8,7 +8,7 @@
 
 [English](README.md) | 简体中文
 
-给 [OpenAI Codex CLI](https://github.com/openai/codex) 和 [Claude Code](https://code.claude.com) 加一条底栏：context 已用比例、5 小时和周额度剩余（含重置时间）、本次会话 token 数。命令照旧是 `codex` 和 `claude`。
+给 [OpenAI Codex CLI](https://github.com/openai/codex) 和 [Claude Code](https://code.claude.com) 加一条底栏：context 已用比例、5 小时和周额度剩余（含距重置剩余时间）、本次会话 token 数。命令照旧是 `codex` 和 `claude`。
 
 ![codex-statusline 演示](docs/demo.gif)
 
@@ -46,13 +46,13 @@ cxbar install                       # 加 --dry-run 先看会改什么
 同一条底栏也能用在 [Claude Code](https://code.claude.com/docs/en/statusline) 里：`cxbar install` 检测到 `~/.claude` 时，会把它设为 Claude Code 的 `statusLine`，运行 `claude` 就能看到同样的两行，外加本次会话的花费：
 
 ```text
-CTX USED ███░░░░░ 35% | 5h ██░░░░░░░░ 18% 3:46pm | week ██████░░░░ 62% Sat 1:46pm | tok 1.2M
+CTX USED ███░░░░░ 35% | 5h ██░░░░░░░░ 18% 2h 15m | week ██████░░░░ 62% 2d 4h | tok 1.2M
 in 1.2M · 94% cached · out 44.0k · ≈$1.84
 ```
 
 - **保留你原有的设置**：已经在用别的 statusLine？安装时不会覆盖；想换成这条就用 `cxbar install --claude`，`cxbar uninstall` 会把你原来的还回去。
 - **Claude 这边不需要 tmux**：Claude Code 直接把数据交给底栏。
-- **所有账号都能用**：Pro 和 Max 显示 5h 与周额度及重置时间；API key 用户显示 context、token 和花费。
+- **所有账号都能用**：Pro 和 Max 显示 5h 与周额度及距重置剩余时间；API key 用户显示 context、token 和花费。
 - **一份配置**：`cxbar config` 同时改两边的底栏。
 
 ## 使用
@@ -83,7 +83,7 @@ cxbar uninstall
   [ Codex ]   Claude Code      Tab: switch
 
   Preview
-    CTX USED ███░░░░░ 35% | 5h ██░░░░░░░░ 18% 3:46pm | week ██████░░░░ 62% Sat 1:46pm | tok 1.2M
+    CTX USED ███░░░░░ 35% | 5h ██░░░░░░░░ 18% 2h 15m | week ██████░░░░ 62% 2d 4h | tok 1.2M
     in 1.2M · 94% cached · out 44.0k | ⎇ main +42 -10
 
   Line 1

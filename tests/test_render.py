@@ -45,8 +45,24 @@ class RenderTests(unittest.TestCase):
         self.assertNotIn("reset ", result)
         for removed in ("Claude", "feature/status", "/work", "LEFT", "age"):
             self.assertNotIn(removed, result)
-        # The weekly reset is disambiguated by weekday and time.
-        self.assertRegex(result, r"[A-Z][a-z]{2} \d{1,2}:\d{2}[ap]m")
+        # The quota windows show how long is left, not the clock time of the reset.
+        self.assertIn("1h 0m", result)
+        self.assertIn("23d 3h", result)
+        self.assertNotRegex(result, r"\d{1,2}:\d{2}[ap]m")
+
+    def test_quota_shows_time_left_until_reset(self):
+        state = {
+            "now": 1_000_000,
+            "quotas": {
+                "5h": {"remaining": 71, "reset_at": 1_000_000 + 90 * 60},
+                "weekly": {"remaining": 42, "reset_at": 1_000_000 + 2 * 86400 + 4 * 3600},
+            },
+        }
+        line = render(state, 240, tmux=False)
+        self.assertIn("5h", line)
+        self.assertIn("1h 30m", line)
+        self.assertIn("2d 4h", line)
+        self.assertNotRegex(line, r"\d{1,2}:\d{2}[ap]m")
 
     def test_unknown_values(self):
         result = render(
@@ -258,16 +274,28 @@ class ConfigTests(unittest.TestCase):
             self.assertEqual(load_config(path)["theme"], "auto")
 
 
-if __name__ == "__main__":
-    unittest.main()
+class CountdownTests(unittest.TestCase):
+    def test_time_left_is_humanized(self):
+        from src.render import _time_left
 
+        now = 1_700_000_000
+        cases = [
+            (now + 90 * 60, "1h 30m"),
+            (now + 3600, "1h 0m"),
+            (now + 59 * 60 + 30, "59m"),
+            (now + 30, "<1m"),
+            (now + 2 * 86400 + 4 * 3600, "2d 4h"),
+            (now - 1, ""),
+            (None, "--"),
+        ]
+        for reset_at, expected in cases:
+            self.assertEqual(_time_left(reset_at, now), expected, reset_at)
 
-class ClockTests(unittest.TestCase):
-    def test_reset_time_ignores_locale(self):
+    def test_clock_still_ignores_locale(self):
         import locale
         from datetime import datetime
 
-        from src.render import _reset
+        from src.render import _clock
 
         stamp = datetime(2026, 10, 3, 18, 5).timestamp()  # a Saturday, 6:05pm
         previous = locale.setlocale(locale.LC_TIME)
@@ -277,7 +305,11 @@ class ClockTests(unittest.TestCase):
                     locale.setlocale(locale.LC_TIME, name)
                 except locale.Error:
                     continue
-                self.assertEqual(_reset(stamp, 0), "6:05pm")
-                self.assertEqual(_reset(stamp, 0, weekly=True), "Sat 6:05pm")
+                self.assertEqual(_clock(stamp), "6:05pm")
+                self.assertEqual(_clock(stamp, weekly=True), "Sat 6:05pm")
         finally:
             locale.setlocale(locale.LC_TIME, previous)
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -175,20 +175,40 @@ def _bar(value: Any, slots: int, ascii_only: bool) -> str:
     return "█" * filled + "░" * (slots - filled)
 
 
-def _reset(reset_at: Any, now: float, weekly: bool = False) -> str:
-    stamp = _number(reset_at)
-    if stamp is None:
-        return "--"
-    if stamp <= now:
-        return ""  # window already reset; next reset is unknown until Codex reports again
+def _clock(stamp: float, weekly: bool = False) -> str:
+    """Format an absolute time; built by hand because strftime follows the locale."""
     try:
         moment = datetime.fromtimestamp(stamp)
-        # Built by hand: strftime %p/%a follow the locale (e.g. 午後, 土).
         clock = f"{moment.hour % 12 or 12}:{moment.minute:02d}{'am' if moment.hour < 12 else 'pm'}"
         day = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")[moment.weekday()]
         return f"{day} {clock}" if weekly else clock
     except (OverflowError, OSError, ValueError):
         return "--"
+
+
+def _time_left(reset_at: Any, now: float) -> str:
+    """Compact time until a quota window resets, e.g. ``1h 20m`` or ``2d 4h``."""
+    stamp = _number(reset_at)
+    if stamp is None:
+        return "--"
+    if stamp <= now:
+        return ""  # window already reset; next reset is unknown until Codex reports again
+    seconds = stamp - now
+    if seconds < 60:
+        return "<1m"
+    minutes = int(seconds // 60)
+    days, minutes = divmod(minutes, 24 * 60)
+    hours, minutes = divmod(minutes, 60)
+    if days:
+        return f"{days}d {hours}h"
+    if hours:
+        return f"{hours}h {minutes}m"
+    return f"{minutes}m"
+
+
+def _reset(reset_at: Any, now: float, weekly: bool = False) -> str:
+    """Backward-compatible name for the reset countdown; *weekly* is ignored."""
+    return _time_left(reset_at, now)
 
 
 def _quota_values(
@@ -200,7 +220,7 @@ def _quota_values(
     # Past its reset time the window has rolled over: nothing seen since means full quota.
     remaining = 100 if _is_stale(data, now) else _percent(data.get("remaining"))
     left = "--" if remaining is None else f"{remaining}%"
-    reset = _reset(data.get("reset_at"), now, weekly)
+    reset = _reset(data.get("reset_at"), now)
     compact = f"{label} {left}"
     bar = _bar(remaining, 10, ascii_only)
     detail = f"{label} {bar} {left} {reset}".rstrip()
@@ -252,7 +272,7 @@ def _pace(data: Any, minutes: int, now: float, weekly: bool) -> tuple[str, str] 
     empty_at = start + elapsed * 100 / used
     if empty_at >= reset_at:
         return f"{label} pace: lasts to reset", "accent"
-    return f"{label} pace: runs out ~{_reset(empty_at, now, weekly)}", "warning"
+    return f"{label} pace: runs out ~{_clock(empty_at, weekly)}", "warning"
 
 
 def _usage(state: dict) -> str:
