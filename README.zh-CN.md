@@ -28,14 +28,16 @@
 curl -fsSL https://raw.githubusercontent.com/Moviw/codex-statusline/main/install.sh | sh
 ```
 
-脚本会按需安装 [uv](https://docs.astral.sh/uv/)（uv 顺带解决 Python 3.11+，Ubuntu 22.04 也不用手动升级），然后安装本工具，先展示将要改动的 shell 与 hook 配置，确认后才写入。
+脚本会按需安装 [uv](https://docs.astral.sh/uv/)（uv 顺带解决 Python 3.11+，Ubuntu 22.04 也不用手动升级），然后安装本工具，先展示将要改动的 shell 与 hook 配置，确认后才写入。再次运行同一条命令即可修复或覆盖旧安装，现有的 `codex-statusline` 和 `cxbar` 命令会被替换。
 
 想手动装：
 
 ```sh
-uv tool install codex-statusline    # 或 pipx install codex-statusline
+uv tool install codex-statusline    # 覆盖旧副本重装时加 --force
 cxbar install                       # 加 --dry-run 先看会改什么
 ```
+
+想用 pipx？执行 `pipx install --force codex-statusline`。
 
 然后**打开一个新终端**运行 `codex`。第一次 Codex 会提示审核 hook，确认是 `codex-statusline binding` 即可。
 

@@ -4,6 +4,7 @@
 
 - Quota segments now show the time left until a window resets (`1h 20m`, `2d 4h`) instead of the clock time of the reset.
 - `relative_time = false` (or **Relative time** off in `cxbar config`) restores the reset clock; it defaults to `true`.
+- Re-running `install.sh` now forces the uv install, so existing `codex-statusline` / `cxbar` executables are replaced instead of failing with "Executables already exist". `cxbar update` does the same for uv installs.
 
 ## 0.7.1
 

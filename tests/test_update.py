@@ -28,7 +28,8 @@ class UpdateTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             (Path(tmp) / "uv-receipt.toml").touch()
             self.assertEqual(
-                upgrade_command(tmp, pkg), ["uv", "tool", "install", "codex-statusline@latest"]
+                upgrade_command(tmp, pkg),
+                ["uv", "tool", "install", "--force", "codex-statusline@latest"],
             )
         with tempfile.TemporaryDirectory() as tmp:
             (Path(tmp) / "pipx_metadata.json").touch()
@@ -49,6 +50,13 @@ class UpdateTests(unittest.TestCase):
         self.assertIn("^ update available", render(state, 240, tmux=False, ascii_only=True))
         self.assertNotIn("update", render(state, 40, tmux=False))
         self.assertNotIn("update", render(dict(state, update="#(evil)"), 240, tmux=False))
+
+
+class InstallScriptTests(unittest.TestCase):
+    def test_installer_forces_reinstall_and_accepts_force(self):
+        script = (Path(__file__).resolve().parent.parent / "install.sh").read_text()
+        self.assertIn("uv tool install --force --upgrade", script)
+        self.assertIn('if [ "${1-}" = "--force" ]; then', script)
 
 
 class CheckTests(unittest.TestCase):

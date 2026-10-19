@@ -29,14 +29,16 @@ Requires macOS or Linux, [tmux](https://github.com/tmux/tmux), and Codex CLI ≥
 curl -fsSL https://raw.githubusercontent.com/Moviw/codex-statusline/main/install.sh | sh
 ```
 
-The script installs [uv](https://docs.astral.sh/uv/) if needed (uv also fetches Python 3.11+ for you), installs the tool, then shows you the exact shell/hook diff and asks before writing anything.
+The script installs [uv](https://docs.astral.sh/uv/) if needed (uv also fetches Python 3.11+ for you), installs the tool, then shows you the exact shell/hook diff and asks before writing anything. Re-run the same command to repair or replace an existing install; it overwrites the existing `codex-statusline` and `cxbar` commands.
 
 Prefer to do it yourself:
 
 ```sh
-uv tool install codex-statusline    # or: pipx install codex-statusline
+uv tool install codex-statusline    # add --force to reinstall over an old copy
 cxbar install                       # add --dry-run to see the plan first
 ```
+
+Prefer pipx? `pipx install --force codex-statusline`.
 
 Then **open a new terminal** and run `codex`. The first time, Codex asks you to review a hook: confirm it is `codex-statusline binding`.
 

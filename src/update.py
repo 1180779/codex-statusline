@@ -97,9 +97,10 @@ def cached_newer_version() -> str | None:
 def upgrade_command(prefix: str = sys.prefix, package: Path = PACKAGE) -> list[str]:
     # uv and pipx each leave a marker file in the tool's environment. Install the latest
     # release from PyPI explicitly: `upgrade` keeps the original source, so a tool first
-    # installed from a local checkout would otherwise never leave that version.
+    # installed from a local checkout would otherwise never leave that version. --force
+    # replaces executables left by an older or differently installed copy.
     if (Path(prefix) / "uv-receipt.toml").exists():
-        return ["uv", "tool", "install", "codex-statusline@latest"]
+        return ["uv", "tool", "install", "--force", "codex-statusline@latest"]
     if (Path(prefix) / "pipx_metadata.json").exists():
         return ["pipx", "install", "--force", "codex-statusline"]
     if (package.parent / ".git").exists():

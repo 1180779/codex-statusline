@@ -1,7 +1,14 @@
 #!/bin/sh
 # One-line installer: curl -fsSL https://raw.githubusercontent.com/Moviw/codex-statusline/main/install.sh | sh
 # Extra args go to `codex-statusline install`, e.g. `| sh -s -- --yes`.
+# Re-running the installer replaces an existing copy; `--force` is accepted for that.
 set -eu
+
+# The uv install below always forces, so consume a leading --force instead of
+# passing it to `codex-statusline install`, which does not know that option.
+if [ "${1-}" = "--force" ]; then
+    shift
+fi
 
 say() { printf 'codex-statusline: %s\n' "$*"; }
 
@@ -29,8 +36,9 @@ if ! command -v uv >/dev/null 2>&1; then
     PATH="$HOME/.local/bin:$PATH"
 fi
 
-# uv fetches Python 3.11+ itself if the system one is older.
-uv tool install --upgrade --python '>=3.11' codex-statusline
+# uv fetches Python 3.11+ itself if the system one is older. --force lets a
+# reinstall replace executables left by an older or differently installed copy.
+uv tool install --force --upgrade --python '>=3.11' codex-statusline
 BIN="$(uv tool dir --bin)/codex-statusline"
 
 # stdin is this script when piped; read the confirmation from the terminal.
