@@ -223,6 +223,38 @@ class RouteTests(unittest.TestCase):
 
 
 class LaunchFailureTests(unittest.TestCase):
+    def test_child_preserves_exit_code_when_quota_blocks_marker(self):
+        from src.launcher import child
+
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory, "launch.json").write_text(
+                json.dumps({"launch_id": "test", "argv": ["/official/codex"]})
+            )
+            with (
+                patch("src.launcher.atomic_json") as write,
+                patch("src.launcher.subprocess.Popen") as popen,
+                contextlib.redirect_stderr(io.StringIO()),
+            ):
+                write.side_effect = [None, OSError(122, "Disk quota exceeded")]
+                popen.return_value.wait.return_value = 42
+                self.assertEqual(child(directory), 42)
+
+    @patch("src.launcher.official", return_value="/official/codex")
+    @patch("src.launcher.interactive", return_value=True)
+    @patch("src.launcher.version", return_value=(0, 159, 0))
+    @patch("src.launcher.shutil.which", return_value="/fake/tmux")
+    def test_quota_during_setup_falls_back_to_official_codex(self, *_):
+        from src.launcher import launch
+
+        with (
+            patch("src.launcher.tempfile.mkdtemp", side_effect=OSError(122, "Disk quota exceeded")),
+            patch("os.execv", side_effect=SystemExit(0)) as execv,
+            contextlib.redirect_stderr(io.StringIO()),
+        ):
+            with self.assertRaises(SystemExit):
+                launch(["resume", "abc"])
+        execv.assert_called_once_with("/official/codex", ["/official/codex", "resume", "abc"])
+
     @patch("src.launcher.official", return_value="/official/codex")
     @patch("src.launcher.interactive", return_value=True)
     @patch("src.launcher.version", return_value=(0, 159, 0))

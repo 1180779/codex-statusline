@@ -1,5 +1,6 @@
 """One isolated tmux server per interactive launch. No PTY input interception."""
 
+import errno
 import json
 import os
 import re
@@ -125,7 +126,12 @@ def child(directory):
     except OSError as error:
         print(f"codex-statusline: cannot start official Codex: {error}", file=sys.stderr)
         code = 127
-    atomic_json(root / "exit.json", {"code": code})
+    try:
+        atomic_json(root / "exit.json", {"code": code})
+    except OSError as error:
+        if error.errno not in (errno.ENOSPC, errno.EDQUOT):
+            raise
+        print(f"codex-statusline: cannot record exit status: {error}", file=sys.stderr)
     return code
 
 
@@ -183,7 +189,11 @@ def launch(args):
             file=sys.stderr,
         )
         os.execv(binary, [binary, *args])
-    root = Path(tempfile.mkdtemp(prefix="csl-", dir="/tmp"))
+    try:
+        root = Path(tempfile.mkdtemp(prefix="csl-", dir="/tmp"))
+    except OSError as error:
+        print(f"codex-statusline: {error} Falling back to official Codex.", file=sys.stderr)
+        os.execv(binary, [binary, *args])
     token = str(uuid.uuid4())
     # A private in-process server ensures SessionStart inherits this launch's
     # environment, rather than a long-lived daemon's earlier environment.
@@ -195,38 +205,48 @@ def launch(args):
         elif arg.startswith("--cd="):
             cwd = os.path.abspath(os.path.expanduser(arg.split("=", 1)[1]))
     config = {"launch_id": token, "argv": argv, "cwd": cwd, "launcher_pid": os.getpid()}
-    atomic_json(root / "launch.json", config)
+    try:
+        atomic_json(root / "launch.json", config)
+    except OSError as error:
+        shutil.rmtree(root, ignore_errors=True)
+        print(f"codex-statusline: {error} Falling back to official Codex.", file=sys.stderr)
+        os.execv(binary, [binary, *args])
     conf = root / "tmux.conf"
-    conf.write_text(
-        "set -g status on\n"
-        "set -g status-position bottom\n"
-        "set -g status-interval 0\n"
-        "set -g status-left-length 10000\n"
-        'set -g status-right ""\n'
-        'set -g status-format "#{status-left}"\n'
-        'set -g status-left ""\n'
-        "set -g allow-rename off\n"
-        "set -g set-titles off\n"
-        "set -g mouse on\n"
-        # Every key belongs to Codex: no prefix (Ctrl-B), no wait after Esc.
-        "set -g prefix None\n"
-        "unbind C-b\n"
-        "set -s escape-time 10\n"
-        "set -g history-limit 10000\n"
-        "set -g remain-on-exit on\n"
-        "set -g exit-empty on\n"
-    )
-    with conf.open("a") as stream:
-        stream.write(
-            'set -g status-left "' + placeholder(shutil.get_terminal_size((80, 24)).columns) + '"\n'
+    try:
+        conf.write_text(
+            "set -g status on\n"
+            "set -g status-position bottom\n"
+            "set -g status-interval 0\n"
+            "set -g status-left-length 10000\n"
+            'set -g status-right ""\n'
+            'set -g status-format "#{status-left}"\n'
+            'set -g status-left ""\n'
+            "set -g allow-rename off\n"
+            "set -g set-titles off\n"
+            "set -g mouse on\n"
+            # Every key belongs to Codex: no prefix (Ctrl-B), no wait after Esc.
+            "set -g prefix None\n"
+            "unbind C-b\n"
+            "set -s escape-time 10\n"
+            "set -g history-limit 10000\n"
+            "set -g remain-on-exit on\n"
+            "set -g exit-empty on\n"
         )
-    from .render import THEMES, load_config
+        with conf.open("a") as stream:
+            stream.write(
+                'set -g status-left "' + placeholder(shutil.get_terminal_size((80, 24)).columns) + '"\n'
+            )
+        from .render import THEMES, load_config
 
-    cfg = load_config()
-    with conf.open("a") as stream:
-        stream.write(f'set -g status-style "{THEMES[cfg["theme"]]}"\n')
-        if cfg["line2"]:  # second status row, filled from the @line2 option
-            stream.write('set -g status 2\nset -g status-format[1] "#{@line2}"\n')
+        cfg = load_config()
+        with conf.open("a") as stream:
+            stream.write(f'set -g status-style "{THEMES[cfg["theme"]]}"\n')
+            if cfg["line2"]:  # second status row, filled from the @line2 option
+                stream.write('set -g status 2\nset -g status-format[1] "#{@line2}"\n')
+    except OSError as error:
+        shutil.rmtree(root, ignore_errors=True)
+        print(f"codex-statusline: {error} Falling back to official Codex.", file=sys.stderr)
+        os.execv(binary, [binary, *args])
     # -u: draw UTF-8 even when LANG/LC_* say otherwise (e.g. over ssh), or tmux drops the bars.
     base = [tmux, "-u", "-S", str(root / "tmux.sock"), "-f", str(conf)]
     env = dict(os.environ)
@@ -323,9 +343,16 @@ def launch(args):
                         call("set-option", "-t", "codex", "@line2", second)
                         last_second = second
                 # Save metadata-only current view for doctor/tests; never pane text.
-                atomic_json(root / "view.json", state)
+                try:
+                    atomic_json(root / "view.json", state)
+                except OSError as error:
+                    if error.errno not in (errno.ENOSPC, errno.EDQUOT):
+                        raise
             except Exception as error:
-                atomic_json(root / "error.json", {"error": repr(error)[:500]})
+                try:
+                    atomic_json(root / "error.json", {"error": repr(error)[:500]})
+                except OSError:
+                    pass
                 last_line = None
                 # Rendering / local log failure never terminates the official process.
                 try:
